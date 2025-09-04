@@ -10,6 +10,24 @@
     th { background: #f6f6f6; }
     a, button { word-break: break-all; }
     button { cursor: pointer; padding: 4px 8px; }
+    #previewModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    #previewContent {
+      background: #fff;
+      padding: 20px;
+      max-width: 80%;
+      max-height: 80%;
+      overflow: auto;
+      border-radius: 8px;
+    }
+    #previewContent pre { white-space: pre-wrap; word-wrap: break-word; }
+    #closePreview { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -22,6 +40,13 @@
     </tr>
   </table>
 
+  <div id="previewModal">
+    <div id="previewContent">
+      <div id="previewInner"></div>
+      <button id="closePreview">Close Preview</button>
+    </div>
+  </div>
+
   <script>
     const owner = "jimhasaburger";
     const repo = "jimhasaburger.github.io";
@@ -31,7 +56,7 @@
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filesDir}?ref=${branch}`;
 
     fetch(apiUrl)
-      .then(response => response.json())
+      .then(res => res.json())
       .then(files => {
         if (!Array.isArray(files)) {
           document.getElementById("fileTable").insertAdjacentHTML(
@@ -42,14 +67,14 @@
         }
 
         files.forEach(file => {
-          if (file.type !== "file") return; // Only files
+          if (file.type !== "file") return;
           const name = file.name;
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filesDir}/${name}`;
 
           document.getElementById("fileTable").insertAdjacentHTML("beforeend", `
             <tr>
               <td>${name}</td>
-              <td><a href="${rawUrl}" target="_blank">View Raw</a></td>
+              <td><button onclick="previewFile('${rawUrl}', '${name}')">View Raw</button></td>
               <td><button onclick="downloadFile('${rawUrl}', '${name}')">Download</button></td>
             </tr>
           `);
@@ -61,6 +86,37 @@
           `<tr><td colspan="3">Error loading files.</td></tr>`
         );
       });
+
+    function previewFile(url, filename) {
+      const modal = document.getElementById('previewModal');
+      const content = document.getElementById('previewInner');
+      content.innerHTML = '';
+
+      if (filename.endsWith('.txt')) {
+        fetch(url)
+          .then(resp => resp.text())
+          .then(text => {
+            const pre = document.createElement('pre');
+            pre.textContent = text;
+            content.appendChild(pre);
+            modal.style.display = 'flex';
+          })
+          .catch(err => alert('Failed to preview text file'));
+      } else if (filename.endsWith('.ogg') || filename.endsWith('.mp3')) {
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = url;
+        content.appendChild(audio);
+        modal.style.display = 'flex';
+      } else {
+        // fallback: open in new tab
+        window.open(url, '_blank');
+      }
+    }
+
+    document.getElementById('closePreview').addEventListener('click', () => {
+      document.getElementById('previewModal').style.display = 'none';
+    });
 
     function downloadFile(url, filename) {
       fetch(url)
