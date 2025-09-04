@@ -8,7 +8,8 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { padding: 8px 12px; border: 1px solid #ccc; }
     th { background: #f6f6f6; }
-    a { word-break: break-all; }
+    a, button { word-break: break-all; }
+    button { cursor: pointer; padding: 4px 8px; }
   </style>
 </head>
 <body>
@@ -20,39 +21,60 @@
       <th>Download</th>
     </tr>
   </table>
+
   <script>
     const owner = "jimhasaburger";
     const repo = "jimhasaburger.github.io";
     const branch = "main"; 
     const filesDir = "files";
 
-    // GitHub API endpoint to list files in the /files folder
     const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filesDir}?ref=${branch}`;
 
     fetch(apiUrl)
       .then(response => response.json())
       .then(files => {
         if (!Array.isArray(files)) {
-          document.getElementById("fileTable").insertAdjacentHTML("beforeend", `<tr><td colspan="3">No files found.</td></tr>`);
+          document.getElementById("fileTable").insertAdjacentHTML(
+            "beforeend", 
+            `<tr><td colspan="3">No files found.</td></tr>`
+          );
           return;
         }
+
         files.forEach(file => {
-          if (file.type !== "file") return; // Only list files, not folders
+          if (file.type !== "file") return; // Only files
           const name = file.name;
-          // RAW GitHub URL for direct file access/download
           const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${filesDir}/${name}`;
+
           document.getElementById("fileTable").insertAdjacentHTML("beforeend", `
             <tr>
               <td>${name}</td>
               <td><a href="${rawUrl}" target="_blank">View Raw</a></td>
-              <td><a href="${rawUrl}" download="${name}">Download</a></td>
+              <td><button onclick="downloadFile('${rawUrl}', '${name}')">Download</button></td>
             </tr>
           `);
         });
       })
       .catch(err => {
-        document.getElementById("fileTable").insertAdjacentHTML("beforeend", `<tr><td colspan="3">Error loading files.</td></tr>`);
+        document.getElementById("fileTable").insertAdjacentHTML(
+          "beforeend", 
+          `<tr><td colspan="3">Error loading files.</td></tr>`
+        );
       });
+
+    function downloadFile(url, filename) {
+      fetch(url)
+        .then(resp => resp.blob())
+        .then(blob => {
+          const link = document.createElement('a');
+          link.href = window.URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        })
+        .catch(err => console.error('Download failed', err));
+    }
   </script>
 </body>
 </html>
