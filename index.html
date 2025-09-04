@@ -10,24 +10,6 @@
     th { background: #f6f6f6; }
     a, button { word-break: break-all; }
     button { cursor: pointer; padding: 4px 8px; }
-    #previewModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-    }
-    #previewContent {
-      background: #fff;
-      padding: 20px;
-      max-width: 80%;
-      max-height: 80%;
-      overflow: auto;
-      border-radius: 8px;
-    }
-    #previewContent pre { white-space: pre-wrap; word-wrap: break-word; }
-    #closePreview { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -39,13 +21,6 @@
       <th>Download</th>
     </tr>
   </table>
-
-  <div id="previewModal">
-    <div id="previewContent">
-      <div id="previewInner"></div>
-      <button id="closePreview">Close Preview</button>
-    </div>
-  </div>
 
   <script>
     const owner = "jimhasaburger";
@@ -88,35 +63,29 @@
       });
 
     function previewFile(url, filename) {
-      const modal = document.getElementById('previewModal');
-      const content = document.getElementById('previewInner');
-      content.innerHTML = '';
-
       if (filename.endsWith('.txt')) {
+        // Open new tab with <p> element containing the text
         fetch(url)
           .then(resp => resp.text())
           .then(text => {
-            const pre = document.createElement('pre');
-            pre.textContent = text;
-            content.appendChild(pre);
-            modal.style.display = 'flex';
+            const newTab = window.open();
+            newTab.document.body.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
           })
-          .catch(err => alert('Failed to preview text file'));
+          .catch(err => alert('Failed to load text file'));
       } else if (filename.endsWith('.ogg') || filename.endsWith('.mp3')) {
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = url;
-        content.appendChild(audio);
-        modal.style.display = 'flex';
+        // Open new tab with <audio> player
+        const newTab = window.open();
+        newTab.document.body.innerHTML = `
+          <audio controls autoplay style="width:100%">
+            <source src="${url}" type="audio/${filename.endsWith('.ogg') ? 'ogg' : 'mpeg'}">
+            Your browser does not support the audio element.
+          </audio>
+        `;
       } else {
-        // fallback: open in new tab
+        // Fallback: open raw file in new tab
         window.open(url, '_blank');
       }
     }
-
-    document.getElementById('closePreview').addEventListener('click', () => {
-      document.getElementById('previewModal').style.display = 'none';
-    });
 
     function downloadFile(url, filename) {
       fetch(url)
