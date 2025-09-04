@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>File List</title>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; }
+    th { background: #f6f6f6; }
+    a { word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>File List</h1>
+  <table id="fileTable">
+    <tr>
+      <th>File Name</th>
+      <th>View</th>
+      <th>Download</th>
+    </tr>
+  </table>
+  <script>
+    // CHANGE THESE FOR YOUR REPO:
+    const owner = "Jimhasaburger";
+    const repo = "CalAPI-Fixed";
+    const branch = "main"; // or your default branch
+    const filesDir = "files";
+
+    // GitHub API endpoint to list files in the /files folder
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${filesDir}?ref=${branch}`;
+
+    fetch(apiUrl)
+      .then(response => response.json())
+      .then(files => {
+        if (!Array.isArray(files)) {
+          document.getElementById("fileTable").insertAdjacentHTML("beforeend", `<tr><td colspan="3">No files found.</td></tr>`);
+          return;
+        }
+        files.forEach(file => {
+          if (file.type !== "file") return; // Only list files, not folders
+          const name = file.name;
+          const viewUrl = `https://${owner}.github.io/${repo}/${filesDir}/${name}`;
+          const downloadUrl = viewUrl;
+          document.getElementById("fileTable").insertAdjacentHTML("beforeend", `
+            <tr>
+              <td>${name}</td>
+              <td><a href="${viewUrl}" target="_blank">View</a></td>
+              <td><a href="${downloadUrl}" download>Download</a></td>
+            </tr>
+          `);
+        });
+      })
+      .catch(err => {
+        document.getElementById("fileTable").insertAdjacentHTML("beforeend", `<tr><td colspan="3">Error loading files.</td></tr>`);
+      });
+  </script>
+</body>
+</html>
